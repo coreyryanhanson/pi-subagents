@@ -1,5 +1,5 @@
 import { splitKnownThinkingSuffix as splitThinkingSuffix, type ModelInfo as AvailableModelInfo } from "../../shared/model-info.ts";
-import { checkModelScope, type ModelScopeCheckRule, type ModelScopeViolation, type ModelSource } from "./model-scope.ts";
+import { checkModelScope, SCOPED_PATTERN, type ModelScopeCheckRule, type ModelScopeViolation, type ModelSource } from "./model-scope.ts";
 
 export type { AvailableModelInfo };
 
@@ -267,12 +267,16 @@ function configuredScopes(scope: ModelScopeCheckRule | ModelScopeCheckRule[] | u
 	return scope ? (Array.isArray(scope) ? scope : [scope]) : [];
 }
 
-function throwForUnresolvedEnforcedInheritScope(scope: ModelScopeCheckRule | ModelScopeCheckRule[] | undefined, includeMixed = false): void {
-	const unresolvedInheritScope = configuredScopes(scope)
-		.find((entry) => entry.enforce === true && (includeMixed ? entry.allow?.includes(INHERIT_MODEL) : entry.allow?.length === 1 && entry.allow[0] === INHERIT_MODEL));
-	if (!unresolvedInheritScope) return;
-	const origin = unresolvedInheritScope.origin ?? "modelScope";
-	throw new Error(`Cannot enforce subagent model scope (${origin}): 'inherit' requires a current parent session model.`);
+function throwForUnresolvedEnforcedReservedScope(scope: ModelScopeCheckRule | ModelScopeCheckRule[] | undefined, includeMixed = false): void {
+	const unresolvedReservedScope = configuredScopes(scope)
+		.find((entry) => entry.enforce === true && (includeMixed
+			? entry.allow?.some((pattern) => pattern === INHERIT_MODEL || pattern === SCOPED_PATTERN)
+			: entry.allow?.length === 1 && (entry.allow[0] === INHERIT_MODEL || entry.allow[0] === SCOPED_PATTERN)));
+	if (!unresolvedReservedScope) return;
+	const origin = unresolvedReservedScope.origin ?? "modelScope";
+	const token = unresolvedReservedScope.allow?.includes(INHERIT_MODEL) ? INHERIT_MODEL : SCOPED_PATTERN;
+	const requirement = token === SCOPED_PATTERN ? "a current parent session model or scoped models" : "a current parent session model";
+	throw new Error(`Cannot enforce subagent model scope (${origin}): '${token}' requires ${requirement}.`);
 }
 
 function enforceModelScopes(
@@ -316,7 +320,7 @@ export function resolveSubagentModelOverride(
 ): string | undefined {
 	const trimmed = typeof requestedModel === "string" ? requestedModel.trim() : "";
 	const explicit = trimmed && trimmed !== INHERIT_MODEL ? trimmed : undefined;
-	if (!parentModel) throwForUnresolvedEnforcedInheritScope(options?.scope, explicit === undefined || options?.source === "inherited");
+	if (!parentModel) throwForUnresolvedEnforcedReservedScope(options?.scope, explicit === undefined || options?.source === "inherited");
 	let resolved: string | undefined;
 	let resolvedFromRegistry = explicit === undefined;
 	if (explicit === undefined) {
@@ -407,7 +411,7 @@ export function resolveModelSelection(
 	preferredProvider?: string,
 	options?: ResolveModelSelectionOptions,
 ): ModelSelectionEvidence {
-	if (!model) throwForUnresolvedEnforcedInheritScope(options?.scope, true);
+	if (!model) throwForUnresolvedEnforcedReservedScope(options?.scope, true);
 	const origin = options?.origin ?? (options?.primaryModelFromParent ? "inherited" : "configured");
 	const requestedModel = origin === "inherited" ? undefined : model;
 	const scopes = configuredScopes(options?.scope);
@@ -422,7 +426,10 @@ export function resolveModelSelection(
 	if (resolved && scopes.some((scope) => scope.enforce === true && scope.strict === true)) {
 		enforceModelScopes(resolved, scopes, "inherited", options?.onWarn);
 	}
-	return { ...(resolved ? { model: resolved } : {}), ...(requestedModel ? { requestedModel } : {}) };
+	const resolvedSelection: ModelSelectionEvidence = {};
+	if (resolved) resolvedSelection.model = resolved;
+	if (requestedModel) resolvedSelection.requestedModel = requestedModel;
+	return resolvedSelection;
 }
 /** Context-overflow signals used to surface a clear input-too-large error. */
 const CONTEXT_OVERFLOW_PATTERNS = [
