@@ -292,8 +292,7 @@ function throwForUnresolvedEnforcedReservedScope(scope: ModelScopeCheckRule | Mo
 	if (!unresolvedReservedScope) return;
 	const origin = unresolvedReservedScope.origin ?? "modelScope";
 	const token = unresolvedReservedScope.allow?.includes(INHERIT_MODEL) ? INHERIT_MODEL : SCOPED_PATTERN;
-	const requirement = token === SCOPED_PATTERN ? "a current parent session model or scoped models" : "a current parent session model";
-	throw new Error(`Cannot enforce subagent model scope (${origin}): '${token}' requires ${requirement}.`);
+	throw new Error(`Cannot enforce subagent model scope (${origin}): '${token}' requires a current parent session model.`);
 }
 
 function enforceModelScopes(

@@ -124,7 +124,7 @@ function expandReservedPatterns(
 	parentModel: { provider: string; id: string } | undefined,
 	scopedModelIds: readonly string[] | undefined,
 ): string[] {
-	if (pattern === "scoped") {
+	if (pattern === SCOPED_PATTERN) {
 		if (scopedModelIds?.length) return [...scopedModelIds];
 		return parentModel ? [`${parentModel.provider}/${parentModel.id}`] : [pattern];
 	}
