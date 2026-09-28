@@ -52,8 +52,8 @@ export function normalizeParentModel(model: unknown): ParentModel | undefined {
 
 /**
  * Provider/id ids of the host session's scoped-model snapshot (`ctx.scopedModels`).
- * Older pi hosts omit the property; an empty result degrades the `scoped`
- * allow token to `inherit` semantics.
+ * Pi reports an empty set when the session is unscoped (nothing configured, or no
+ * pattern matched), and then allows every model; `scoped` narrows that to `inherit`.
  */
 export function scopedModelIdsFromContext(ctx: { scopedModels?: ReadonlyArray<{ model?: unknown }> }): string[] {
 	const scoped = ctx.scopedModels;
@@ -442,10 +442,7 @@ export function resolveModelSelection(
 	if (resolved && scopes.some((scope) => scope.enforce === true && scope.strict === true)) {
 		enforceModelScopes(resolved, scopes, "inherited", options?.onWarn);
 	}
-	const resolvedSelection: ModelSelectionEvidence = {};
-	if (resolved) resolvedSelection.model = resolved;
-	if (requestedModel) resolvedSelection.requestedModel = requestedModel;
-	return resolvedSelection;
+	return { ...(resolved ? { model: resolved } : {}), ...(requestedModel ? { requestedModel } : {}) };
 }
 /** Context-overflow signals used to surface a clear input-too-large error. */
 const CONTEXT_OVERFLOW_PATTERNS = [

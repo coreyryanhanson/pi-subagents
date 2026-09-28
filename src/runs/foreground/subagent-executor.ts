@@ -5473,7 +5473,7 @@ export function createSubagentExecutor(deps: ExecutorDeps): {
 					...(workflowCapabilityCeiling ? { admissionCapabilityCeiling: workflowCapabilityCeiling } : {}),
 					steps: [],
 					...(workflowPreflight ? { preflight: workflowPreflight } : {}),
-					workflow: { trace: [], emits: [], console: [], ...workflowArgsEvidence, ...(workflowResource ? { resource: workflowResource.provenance } : {}) },
+					workflow: { trace: [], emits: [], console: [], ...(workflowArgsEvidence ?? {}), ...(workflowResource ? { resource: workflowResource.provenance } : {}) },
 					workflowChildren: workflowChildSummary({ parentToolCallId: toolCallId, workflowRunId, workflowState: "running", inventoryComplete: false }),
 					runFanoutBudget: getRunFanoutBudgetSnapshot(workflowFanoutBudget),
 				};
@@ -6171,7 +6171,7 @@ export function createSubagentExecutor(deps: ExecutorDeps): {
 						const workflowUsage = sumResultsUsage(workflowResults);
 						settleWorkflowSteerInbox("complete");
 						const workflowChildren = workflowChildSummary({ parentToolCallId: toolCallId, workflowRunId, workflowState: "completed", inventoryComplete: true, trace: workflow.trace, children: workflow.children, steps: status.steps });
-						status = { ...status, state: "complete", endedAt: Date.now(), workflow: { value: workflow.value, trace: finalPreflightTrace, emits: workflow.emits, console: workflow.console, ...workflowArgsEvidence, ...(workflowResource ? { resource: workflowResource.provenance } : {}), ...(finalPreflightWarnings.length ? { preflightWarnings: finalPreflightWarnings } : {}) }, workflowChildren, totalTokens: { input: workflowUsage.input, output: workflowUsage.output, total: workflowUsage.input + workflowUsage.output }, totalCost: sumResultsCost(workflowResults) };
+						status = { ...status, state: "complete", endedAt: Date.now(), workflow: { value: workflow.value, trace: finalPreflightTrace, emits: workflow.emits, console: workflow.console, ...(workflowArgsEvidence ?? {}), ...(workflowResource ? { resource: workflowResource.provenance } : {}), ...(finalPreflightWarnings.length ? { preflightWarnings: finalPreflightWarnings } : {}) }, workflowChildren, totalTokens: { input: workflowUsage.input, output: workflowUsage.output, total: workflowUsage.input + workflowUsage.output }, totalCost: sumResultsCost(workflowResults) };
 						const receipt = terminalWorkflowReceipt(workflowRunId, "complete", workflow.children, workflowChildren, undefined, validHostStepNodes(status.workflowGraph), workflowResource?.provenance, workflowArgsDigest);
 						delete status.workflowReceiptPath;
 						let workflowReceipt: { path: string; receipt: WorkflowReceipt } | undefined;
@@ -6210,7 +6210,7 @@ export function createSubagentExecutor(deps: ExecutorDeps): {
 						const workflowChildren = workflowChildSummary({ parentToolCallId: toolCallId, workflowRunId, workflowState, inventoryComplete: true, trace: partial.trace, children: partial.children, steps: status.steps });
 						const finalPreflightWarnings = workflowPreflightWarnings(workflowPreflight, partial.trace, { settled: true });
 						const finalPreflightTrace = annotateWorkflowPreflightTrace(partial.trace, workflowPreflight);
-						status = compactOptional<AsyncStatus>({ ...status, state, stopped: stopped || undefined, activityState: pauseForDetached || status.activityState === "needs_attention" ? "needs_attention" : undefined, error: workflowFailureMessage(error, workflowRunId, partial.children), endedAt: Date.now(), workflow: { trace: finalPreflightTrace, emits: partial.emits, console: partial.console, ...(error instanceof WorkflowScriptError && error.errorKind ? { failureKind: error.errorKind } : {}), ...workflowArgsEvidence, ...(workflowResource ? { resource: workflowResource.provenance } : {}), ...(finalPreflightWarnings.length ? { preflightWarnings: finalPreflightWarnings } : {}) }, workflowChildren });
+						status = compactOptional<AsyncStatus>({ ...status, state, stopped: stopped || undefined, activityState: pauseForDetached || status.activityState === "needs_attention" ? "needs_attention" : undefined, error: workflowFailureMessage(error, workflowRunId, partial.children), endedAt: Date.now(), workflow: { trace: finalPreflightTrace, emits: partial.emits, console: partial.console, ...(error instanceof WorkflowScriptError && error.errorKind ? { failureKind: error.errorKind } : {}), ...(workflowArgsEvidence ?? {}), ...(workflowResource ? { resource: workflowResource.provenance } : {}), ...(finalPreflightWarnings.length ? { preflightWarnings: finalPreflightWarnings } : {}) }, workflowChildren });
 						if (pauseForDetached) {
 							const promoted = promotePausedWorkflowIfSettled(status);
 							if (promoted) status = promoted;
@@ -6446,7 +6446,7 @@ export function createSubagentExecutor(deps: ExecutorDeps): {
 				});
 				return attachWorkflowMission(withRunFanoutBudget({
 					content: [{ type: "text", text: displayText }],
-					details: compactOptional<Details>({ mode: "workflow", runId: foregroundWorkflowRunId, results: workflowDetailsResults(workflow.children), ...(workflowPreflight ? { preflight: workflowPreflight } : {}), workflowChildren, totalChildUsage: sumResultsUsage(workflowResults), totalCost: sumResultsCost(workflowResults), usageBudget: usageBudgetState(workflowUsageBudget.budget, sumResultsCost(workflowResults)), workflow: { value: workflow.value, trace: finalPreflightTrace, emits: workflow.emits, console: workflow.console, ...workflowArgsEvidence, ...(workflowResource ? { resource: workflowResource.provenance } : {}), ...(finalPreflightWarnings.length ? { preflightWarnings: finalPreflightWarnings } : {}), receipt }, chatProgress }),
+					details: compactOptional<Details>({ mode: "workflow", runId: foregroundWorkflowRunId, results: workflowDetailsResults(workflow.children), ...(workflowPreflight ? { preflight: workflowPreflight } : {}), workflowChildren, totalChildUsage: sumResultsUsage(workflowResults), totalCost: sumResultsCost(workflowResults), usageBudget: usageBudgetState(workflowUsageBudget.budget, sumResultsCost(workflowResults)), workflow: { value: workflow.value, trace: finalPreflightTrace, emits: workflow.emits, console: workflow.console, ...(workflowArgsEvidence ?? {}), ...(workflowResource ? { resource: workflowResource.provenance } : {}), ...(finalPreflightWarnings.length ? { preflightWarnings: finalPreflightWarnings } : {}), receipt }, chatProgress }),
 				}, workflowFanoutBudget));
 			} catch (error) {
 				const partial = error instanceof WorkflowScriptError ? error.partial : { trace: [], emits: [], console: [], children: [] };
@@ -6478,7 +6478,7 @@ export function createSubagentExecutor(deps: ExecutorDeps): {
 				return attachWorkflowMission(withRunFanoutBudget({
 					content: [{ type: "text", text: displayText }],
 					isError: true,
-					details: compactOptional<Details>({ mode: "workflow", runId: foregroundWorkflowRunId, results: workflowDetailsResults(partial.children), ...(workflowPreflight ? { preflight: workflowPreflight } : {}), workflowChildren, totalChildUsage: sumResultsUsage(workflowResults), totalCost: sumResultsCost(workflowResults), usageBudget: usageBudgetState(workflowUsageBudget.budget, sumResultsCost(workflowResults)), workflow: { trace: finalPreflightTrace, emits: partial.emits, console: partial.console, ...(error instanceof WorkflowScriptError && error.errorKind ? { failureKind: error.errorKind } : {}), ...workflowArgsEvidence, ...(workflowResource ? { resource: workflowResource.provenance } : {}), ...(finalPreflightWarnings.length ? { preflightWarnings: finalPreflightWarnings } : {}), receipt }, chatProgress }),
+					details: compactOptional<Details>({ mode: "workflow", runId: foregroundWorkflowRunId, results: workflowDetailsResults(partial.children), ...(workflowPreflight ? { preflight: workflowPreflight } : {}), workflowChildren, totalChildUsage: sumResultsUsage(workflowResults), totalCost: sumResultsCost(workflowResults), usageBudget: usageBudgetState(workflowUsageBudget.budget, sumResultsCost(workflowResults)), workflow: { trace: finalPreflightTrace, emits: partial.emits, console: partial.console, ...(error instanceof WorkflowScriptError && error.errorKind ? { failureKind: error.errorKind } : {}), ...(workflowArgsEvidence ?? {}), ...(workflowResource ? { resource: workflowResource.provenance } : {}), ...(finalPreflightWarnings.length ? { preflightWarnings: finalPreflightWarnings } : {}), receipt }, chatProgress }),
 				}, workflowFanoutBudget));
 			} finally {
 				workflowProgressClosed = true;

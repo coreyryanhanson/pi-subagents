@@ -4,7 +4,7 @@
 
 ### Added
 
-- `subagents.modelScope` allow lists accept the new reserved token `scoped`, which expands to the parent session's scoped-model set (pi's `/scoped-models`) at child launch, so subagent model restrictions follow pi-side model scoping without maintaining a second copy of the list. With no scoping configured it degrades to `inherit`, and an enforced entry with no parent model fails closed like `inherit` does. Violation messages render at most 8 patterns before summarizing the rest. Thanks to @coreyryanhanson for [#2538](https://github.com/nicobailon/pi-subagents/pull/2538).
+- `subagents.modelScope` allow lists accept a reserved `scoped` token. At each child launch it expands to the parent session's scoped models (Pi's `/scoped-models`), so subagent restrictions follow Pi's model scoping without keeping a second copy of the list. When the parent session is unscoped, `scoped` means the same as `inherit`. Violation messages list at most 8 patterns before summarizing the rest. Thanks to [@coreyryanhanson](https://github.com/coreyryanhanson) for [#2538](https://github.com/nicobailon/pi-subagents/pull/2538).
 - After you upgrade pi-subagents, your first interactive session shows a short notice with the highlights of each new version and a link to the changelog. It is shown once and never enters the conversation, so it does not change the model's context or prompt cache. A fresh install and child sessions show nothing.
 - `subagents.agentOverrides.<name>.advertise` adds an agent to the parent-prompt catalog from settings, so you no longer have to copy a builtin agent file just to advertise it. Runtime-registered agents still cannot be advertised. Thanks to [@strive-run](https://github.com/strive-run) for [#2534](https://github.com/nicobailon/pi-subagents/pull/2534).
 
@@ -996,7 +996,6 @@
 - Keep `worktree: true` workflow children on the single-child path while preserving managed patch handoffs.
 
 ### Removed
-
 - Remove unused foreground chain and parallel execution and durable chain management surfaces.
 - Remove legacy subagent tool compatibility fields for append-step control, schedule aliases, async recovery metadata, and string mission goals.
 - Remove chain approval checkpoint steps and the `approve-checkpoint` / `reject-checkpoint` controls.
