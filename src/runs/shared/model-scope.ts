@@ -207,7 +207,6 @@ export function resolveModelScopesForAgent(
  * settings-parsing style). Returns `undefined` when the field is absent.
  */
 export function parseModelScopeConfig(
-	// pi-lens-ignore: no-unknown-parameters
 	value: unknown,
 	meta: { filePath: string },
 ): ModelScopeConfig | undefined {

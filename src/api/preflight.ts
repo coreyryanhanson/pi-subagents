@@ -68,7 +68,7 @@ export interface SubagentLaunchContractInput {
 	thinkingCeiling?: ThinkingLevel;
 	inheritedThinkingCeiling?: ThinkingLevel;
 	parentModel?: ParentModel;
-	/** Scoped-model snapshot (`provider/id` strings); drives the `scoped` allow token. */
+	/** Scoped-model snapshot (`provider/id` strings); drives the `scoped` allow token. Omitting it degrades `scoped` to `inherit`, so callers comparing preflight with execution must pass the session snapshot. */
 	scopedModelIds?: readonly string[];
 	availableModels?: ReadonlyArray<AvailableModelInfo | { provider: string; id: string; fullId?: string; reasoning?: boolean }>;
 	preferredProvider?: string;
