@@ -51,6 +51,23 @@ export function normalizeParentModel(model: unknown): ParentModel | undefined {
 }
 
 /**
+ * Provider/id ids of the host session's scoped-model snapshot (`ctx.scopedModels`).
+ * Older pi hosts omit the property; an empty result degrades the `scoped`
+ * allow token to `inherit` semantics.
+ */
+export function scopedModelIdsFromContext(ctx: { scopedModels?: ReadonlyArray<{ model?: unknown }> }): string[] {
+	const scoped = ctx.scopedModels;
+	if (!Array.isArray(scoped)) return [];
+	const ids: string[] = [];
+	for (const entry of scoped) {
+		const model = entry?.model;
+		const normalized = normalizeParentModel(model);
+		if (normalized) ids.push(`${normalized.provider}/${normalized.id}`);
+	}
+	return ids;
+}
+
+/**
  * Normalize a model id or provider segment for fuzzy comparison: case-fold,
  * treat dots/underscores as dashes (so `4.5` matches `4-5`), and collapse
  * repeated separators.
